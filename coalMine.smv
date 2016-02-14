@@ -1,0 +1,55 @@
+MODULE main
+VAR
+	trainA : {no_coal, has_coal, waiting, tunnel};
+	trainB : {no_coal, has_coal, waiting, tunnel};
+	trainC : {no_coal, has_coal, waiting, tunnel};
+	controller : {trainA, trainB, trainC};
+ASSIGN
+
+	init(trainA) := no_coal;
+	init(trainB) := no_coal;
+	init(trainC) := no_coal;
+	init(controller) := none;
+
+	next(trainA) :=
+			case
+				no_coal 			: has_coal;
+				has_coal 			: waiting;
+				waiting & controller = trainA	: tunnel;
+				tunnel				: no_coal;
+				TRUE				: trainA;
+			esac;
+
+	next(trainB) :=
+			case
+				no_coal 			: has_coal;
+				has_coal 			: waiting;
+				waiting & controller = trainB	: tunnel;
+				tunnel				: no_coal;
+				TRUE				: trainB;
+			esac;
+
+	next(trainC) :=
+			case
+				no_coal 			: has_coal;
+				has_coal 			: waiting;
+				waiting & controller = trainC	: tunnel;
+				tunnel				: no_coal;
+				TRUE				: trainC;
+			esac;
+
+	next(controller) :=
+			case
+				trainA = waiting 
+					& !(trainB = tunnel)
+					& !(trainC = tunnel)	: trainA;
+				trainB = waiting
+					& !(trainA = tunnel)	
+					& !(trainC = tunnel)	: trainB;
+				trainC = waiting
+					& !(trainA = tunnel)
+					& !(trainB = tunnel)	: trainC;
+			esac;
+
+SPEC
+	AG(!(trainA = tunnel & trainB = tunnel & trainC = tunnel))				
