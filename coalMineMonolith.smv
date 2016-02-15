@@ -3,12 +3,38 @@ VAR
 	trainA : {no_coal, has_coal, waiting, tunnel};
 	trainB : {no_coal, has_coal, waiting, tunnel};
 	trainC : {no_coal, has_coal, waiting, tunnel};
+	requestA : boolean;
+	requestB : boolean;
+	requestC : boolean;
+	tunnel_state : boolean;
 	controller : {a, b, c};
 ASSIGN
 
 	init(trainA) := no_coal;
 	init(trainB) := no_coal;
 	init(trainC) := no_coal;
+	init(requestA) := FALSE;
+	init(requestB) := FALSE;
+	init(requestC) := FALSE;
+	init(tunnel_state) := FALSE;
+
+	next(requestA) :=
+			case
+				trainA = waiting	: TRUE;
+				TRUE				: FALSE;
+			esac;
+
+	next(requestB) :=
+			case
+				trainB = waiting	: TRUE;
+				TRUE				: FALSE;
+			esac;
+
+	next(requestC) :=
+			case
+				trainC = waiting	: TRUE;
+				TRUE				: FALSE;
+			esac;
 	
 
 	next(trainA) :=
@@ -18,7 +44,7 @@ ASSIGN
 				trainA = waiting 
 					& controller = a	: tunnel;
 				trainA = tunnel			: no_coal;
-				TRUE				: trainA;
+				TRUE					: trainA;
 			esac;
 
 	next(trainB) :=
@@ -28,7 +54,7 @@ ASSIGN
 				trainB = waiting 
 					& controller = b	: tunnel;
 				trainB = tunnel			: no_coal;
-				TRUE				: trainB;
+				TRUE					: trainB;
 			esac;
 
 	next(trainC) :=
@@ -38,22 +64,56 @@ ASSIGN
 				trainC = waiting 
 					& controller = c	: tunnel;
 				trainC = tunnel			: no_coal;
-				TRUE				: trainC;
+				TRUE					: trainC;
 			esac;
 
 	next(controller) :=
 			case
-				trainA = waiting 
-					& !(trainB = tunnel)
-					& !(trainC = tunnel)	: a;
-				trainB = waiting
-					& !(trainA = tunnel)	
-					& !(trainC = tunnel)	: b;
-				trainC = waiting
-					& !(trainA = tunnel)
-					& !(trainB = tunnel)	: c;
-				TRUE				: controller;
+				!tunnel_state :
+		 			case
+						requestA	:
+							case
+								requestB	: 
+							  		case
+								  		requestC	: {a, b, c};
+								  		TRUE		: {a, b};
+									esac;
+								requestC	: {a, c};
+								TRUE		: a;					
+							esac;
+						requestB	:
+							case
+								requestA	: 
+							  		case
+								  		requestC	: {a, b, c};
+								  		TRUE		: {a, b};
+									esac;
+								requestC	: {b, c};
+								TRUE		: b;					
+							esac;
+						requestC	:
+							case
+								requestA	: 
+							  		case
+								  		requestB	: {a, b, c};
+								  		TRUE		: {a, c};
+									esac;
+								requestB	: {b, c};
+								TRUE		: c;					
+							esac;
+						TRUE		: controller;				
+					esac;
+			  TRUE		: controller;
+			esac;			
+
+	next(tunnel_state) :=
+			case
+				next(trainA) = tunnel
+					| next(trainB) = tunnel
+					| next(trainC) = tunnel	: TRUE;
+				TRUE						: FALSE;
 			esac;
+	
 
 SPEC
 	AG(!(trainA = tunnel & trainB = tunnel & trainC = tunnel))
