@@ -1,7 +1,0 @@
-MODULE main
-VAR
-	b0 : boolean;
-ASSIGN
-	init(b0) := 0;
-LTLSPEC
-	G(F (b0 | !b0))
