@@ -1,0 +1,35 @@
+MODULE main
+VAR
+	p1 : {n, t, t1, c, err};
+	p2 : {n, t, t2, c, err};
+	request1 : boolean;
+	request2 : boolean;
+
+ASSIGN
+	init(p1) := n;
+	init(p2) := n;
+
+	next(p1) :=
+		case
+			p1 = n & request1  & !request2 & !(p2 = t2) : t1;
+			p1 = n & request1 & !request2 : t;
+			p1 = t & request1 & !(p2 = t2) & !(p2 = c) : c;
+			p1 = t1 & request1 : c;
+			p1 = c & request1 : n;
+			TRUE : err;
+		esac;
+
+
+	next(p2) :=
+		case
+			p2 = n & request2 & !request1 & !(p1 = t1) : t2;
+			p2 = n & request2 & !request1 : t;
+			p2 = t & request2 & !(p1 = t1) & !(p1 = c) : c;
+			p2 = t2 & request2 : c;
+			p2 = c & request2 : n; 
+			TRUE : err;
+		esac;
+LTLSPEC
+	G(!(p1 = c & p2 = c))
+LTLSPEC
+	G((p1 = t1 | p1 = t) -> F(p1 = c)) & G((p2 = t2 | p2 = t) -> F(p2 = c))

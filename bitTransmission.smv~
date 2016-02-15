@@ -1,0 +1,26 @@
+MODULE main
+VAR
+	state : {sendbit, recbit, reack, err};
+	transmit : boolean;
+
+	
+ASSIGN
+	init(state) := sendbit;
+
+	next(state) := 
+		case
+			state = sendbit & transmit : {sendbit, recbit};
+			state = sendbit & recbit & transmit : {sendbit, recbit, reack};
+			TRUE : err;
+		esac;
+
+
+FAIRNESS 
+	transmit
+	
+			
+LTLSPEC
+	G(sendbit -> F(reack))
+LTLSPEC
+	G((sendbit & reack) -> recbit)
+	

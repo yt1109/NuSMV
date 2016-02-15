@@ -1,0 +1,33 @@
+MODULE main
+VAR
+	state : {Se, R, SR, err};
+	sendbit : boolean;
+	recbit : boolean;
+	reack: boolean;
+	
+ASSIGN
+	init(state) := Se;
+
+	init(recbit) := FALSE;
+	init(reack) := FALSE;
+	next(sendbit) := sendbit;
+	next(recbit) := recbit;
+	next(reack) := reack;
+	next(state) := 
+		case
+			sendbit & !recbit & !reack : Se;
+			sendbit & recbit & !reack : R;
+			sendbit & recbit & reack : SR;
+			TRUE : err;
+		esac;
+
+
+FAIRNESS 
+	reack
+	
+			
+LTLSPEC
+	G(sendbit -> F(reack))
+LTLSPEC
+	G((sendbit & reack) -> recbit)
+	
