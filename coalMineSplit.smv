@@ -1,0 +1,79 @@
+MODULE train_t(id, control_signal)
+VAR
+	state : {no_coal, has_coal, waiting, tunnel};
+ASSIGN
+
+	init(state) := no_coal;
+
+	next(state) :=
+			case
+				state = no_coal 		: has_coal;
+				state = has_coal		: waiting;
+				state = waiting
+					& control_signal = id	: tunnel;
+				state = tunnel			: no_coal;
+				TRUE				: state;
+			esac;
+
+				
+
+MODULE controller_t(request, tunnel_state)
+VAR
+	control_signal : {a, b, c};
+ASSIGN
+	next(control_signal) :=
+			case
+				request = a & !tunnel_state	: a;
+				request = b & !tunnel_state	: b;
+				request = c & !tunnel_state	: c;
+				TRUE				: control_signal;
+			esac;
+
+				
+
+
+MODULE main
+VAR
+	request : {a, b, c, undef};
+	tunnel_state : boolean;
+	trainA : train_t(a, controller.control_signal);
+	trainB : train_t(b, controller.control_signal);
+	trainC : train_t(c, controller.control_signal);
+	controller : controller_t(request, tunnel_state);
+
+ASSIGN
+	init(request) := undef;
+	init(tunnel_state) := FALSE;
+	
+	next(request) :=
+			case
+				trainA.state = waiting 
+					& request = undef
+					& !tunnel_state		: a;
+				trainB.state = waiting
+					& request = undef
+					& !tunnel_state		: b;
+				trainC.state = waiting
+					& request = undef
+					& !tunnel_state		: c;
+				TRUE				: undef;
+			esac;
+	
+	next(tunnel_state) :=
+			case
+				next(trainA.state = tunnel)
+					| next(trainB.state = tunnel)
+					| next(trainC.state = tunnel)	: TRUE;
+				TRUE				 	: FALSE;
+			esac;
+
+SPEC
+	AG(!(trainA.state = tunnel & trainB.state = tunnel & trainC.state = tunnel))
+SPEC
+	AG(trainA.state = tunnel -> AF!(trainA.state = tunnel))
+SPEC
+	AG(trainA.state = has_coal -> EF!(trainA.state = has_coal))
+SPEC
+	AF(trainA.state = tunnel)
+SPEC
+	AG(EF(trainA.state = tunnel))
